@@ -67,6 +67,11 @@ function App() {
 
     recognition.onend = () => {
       console.log('Voice recognition stopped.');
+      // Check if the stopping is intentional or if it should restart
+      if (isListening) {
+        console.log('Restarting recognition.');
+        recognition.start();
+      }
     };
 
     if (isListening) {
