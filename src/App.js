@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 
 function App() {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState(''); // Current transcription
   const [transcriptHistory, setTranscriptHistory] = useState([]); // History of all transcriptions
+
+  const recognitionRef = useRef(null); // Ref to hold the SpeechRecognition instance
 
   // Function to clear the screen
   const clearScreen = () => {
@@ -41,17 +43,17 @@ function App() {
 
   useEffect(() => {
     const speechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new speechRecognition();
+    recognitionRef.current = new speechRecognition();
 
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
+    recognitionRef.current.continuous = true;
+    recognitionRef.current.interimResults = true;
+    recognitionRef.current.lang = 'en-US';
 
-    recognition.onstart = () => {
+    recognitionRef.current.onstart = () => {
       console.log('Voice recognition activated. Start speaking.');
     };
 
-    recognition.onresult = (event) => {
+    recognitionRef.current.onresult = (event) => {
       const current = event.resultIndex;
       const newTranscript = event.results[current][0].transcript;
       if (event.results[current].isFinal) {
@@ -65,25 +67,28 @@ function App() {
       console.log(newTranscript);
     };
 
-    recognition.onend = () => {
+    recognitionRef.current.onend = () => {
       console.log('Voice recognition stopped.');
       // Check if the stopping is intentional or if it should restart
       if (isListening) {
         console.log('Restarting recognition.');
-        recognition.start();
+        recognitionRef.current.start();
       }
     };
 
-    if (isListening) {
-      recognition.start();
-    } else {
-      recognition.stop();
-    }
-
     return () => {
-      recognition.stop();
+      recognitionRef.current.stop();
     };
-  }, [isListening]);
+  }, []);
+
+  useEffect(() => {
+    // Start or stop recognition based on isListening state
+    if (isListening) {
+      recognitionRef.current.start();
+    } else {
+      recognitionRef.current.stop();
+    }
+  }, [isListening]); // Depend on isListening to control the recognition
 
   return (
     <div className="App">
